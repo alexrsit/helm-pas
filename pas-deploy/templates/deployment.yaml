@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pas-deploy.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "pas-deploy.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "pas-deploy.name" . }}
+    spec:
+      containers:
+      - name: pas
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+        env:
+        - name: PAS_EXTRA_VM_OPTIONS
+          value: {{ .Values.env.PAS_EXTRA_VM_OPTIONS }}
+        - name: PAS_SIGNING_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_SIGNING_NAME }}
+              key: {{ .Values.env.PAS_SIGNING_KEY }}
+        - name: PAS_SIGNING_PRIVATE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_SIGNING_PRIVATE_NAME }}
+              key: {{ .Values.env.PAS_SIGNING_PRIVATE_KEY }}
+        - name: PAS_FREJA_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_FREJA_NAME }}
+              key: {{ .Values.env.PAS_FREJA_KEY }}
+        - name: PAS_FREJA_PRIVATE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_FREJA_PRIVATE_NAME }}
+              key: {{ .Values.env.PAS_FREJA_PRIVATE_KEY }}
+        - name: PAS_AD_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_AD_NAME }}
+              key: {{ .Values.env.PAS_AD_KEY }}
+        - name: PAS_SYSADMIN_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.env.PAS_SYSADMIN_NAME }}
+              key: {{ .Values.env.PAS_SYSADMIN_KEY }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /opt/phenixid/container_overlay/config
+        - name: license-volume
+          mountPath: /opt/phenixid/container_overlay/license
+        - name: truststore-volume
+          mountPath: /opt/phenixid/container_overlay/overlay/truststores
+      volumes:
+      - name: config-volume
+        projected:
+          sources:
+          - configMap:
+              name: boot
+              items:
+              - key: boot.json
+                path: boot.json
+          - configMap:
+              name: phenixstore
+              items:
+              - key: phenix-store.json
+                path: phenix-store.json
+      - name: truststore-volume
+        projected:
+          sources:
+          - configMap:
+              name: frejaeidssl
+              items:
+              - key: freja_eid_root_ca_v1.pem
+                path: freja_eid_root_ca_v1.pem
+      - name: license-volume
+        secret:
+          secretName: {{ .Values.secret.existingSecretName }}
+          items:
+          - key: license.p12
+            path: license.p12
