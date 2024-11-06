@@ -1,0 +1,51 @@
+replicaCount: 1
+
+image:
+  repository: alexrsit/pas
+  pullPolicy: IfNotPresent
+  tag: "5.1.3"
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/ 
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: { "app": "pas-deploy" }
+
+service:
+  type: NodePort
+  port: 8443
+  targetPort: 8443
+  nodePort: 31120
+  selector:
+    app: pas-deploy
+  nodeSelector: any
+
+env:
+  PAS_EXTRA_VM_OPTIONS: "-Dcom.phenixidentity.cacerts.dir=overlay/truststores/"
+  PAS_SIGNING_NAME: "signingpassword"
+  PAS_SIGNING_KEY: "PAS_SIGNING_PASSWORD"
+  PAS_SIGNING_PRIVATE_NAME: "signingprivatekey"
+  PAS_SIGNING_PRIVATE_KEY: "PAS_SIGNING_PRIVATE"
+  PAS_FREJA_NAME: "frejapassword"
+  PAS_FREJA_KEY: "PAS_FREJA_PASSWORD"
+  PAS_FREJA_PRIVATE_NAME: "frejaprivatekey"
+  PAS_FREJA_PRIVATE_KEY: "PAS_FREJA_PRIVATE"
+  PAS_AD_NAME: "adpassword"
+  PAS_AD_KEY: "PAS_AD_PASSWORD"
+  PAS_SYSADMIN_NAME: "sysadminpassword"
+  PAS_SYSADMIN_KEY: "PAS_SYSADMIN_PASSWORD"
+
+configMaps: 
+  boot: "files/configs/boot.json"
+  phenixstore: "files/configs/phenix-store.json"
+  frejaeidssl: "files/truststores/frejaeidssl.pem"
+
+secret: 
+  existingSecretName: "pas-license"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
